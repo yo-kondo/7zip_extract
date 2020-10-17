@@ -2,11 +2,12 @@
 $7zip = 'C:\Program Files\7-Zip\7z.exe'
 # パスワード（複数指定可）
 $passwords = @()
-$passwords += 'password2'
 $passwords += 'password1'
+$passwords += 'password2'
 
 # 解凍対象のファイル（フルパス）
 $targetFile = $Args[0]
+
 # 解凍ファイルの拡張子
 $extension = (Get-ChildItem $targetFile).Extension
 # 解凍先のディレクトリ
@@ -26,7 +27,8 @@ if ($extension -eq '.zi_') {
     $targetFile = $changeTargetFile
 }
 
-$passwords | ForEach-Object {
+$exitCode = 0
+foreach($pass in $passwords) {
     # 7zipで解凍
     <#
     7zipの引数 http://fla-moo.blogspot.com/2013/05/7-zip.html
@@ -36,10 +38,17 @@ $passwords | ForEach-Object {
     -p : パスワードを設定
     -o : 出力先を指定
     #>
-    $arg = "x -y -p`"$_`" -o`"$outputPath`" `"$targetFile`""
+    $arg = "x -y -p`"$pass`" -o`"$outputPath`" `"$targetFile`""
     $result = Start-Process -FilePath "$7zip" -ArgumentList $arg -Wait -PassThru -NoNewWindow
+    $exitCode = $result.ExitCode
 
-    if ($result -eq 0) {
-        return
+    if ($exitCode -eq 0) {
+        break
     }
+}
+
+if ($exitCode -eq 0) {
+    Write-Host '成功' -BackgroundColor Green
+} else {
+    Write-Host '失敗' -BackgroundColor Red
 }
